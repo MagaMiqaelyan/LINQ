@@ -1,4 +1,4 @@
-﻿namespace AggregateOperators
+﻿namespace HelpClasses
 {
     public class Product
     {

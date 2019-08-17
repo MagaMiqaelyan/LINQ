@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace OrderingOperators
+namespace HelpClasses
 {
     public class Order
     {

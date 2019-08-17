@@ -1,4 +1,4 @@
-﻿namespace OrderingOperators
+﻿namespace HelpClasses
 {
     public class Customer
     {

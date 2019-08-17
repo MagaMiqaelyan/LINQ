@@ -1,13 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml.Linq;
 using HelpClasses;
 
-namespace JoinOperators
+namespace MiscellaneousOperators
 {
     internal class Program
     {
         private static List<Product> products;
+        private static List<Customer> customers;
 
         /// <summary>
         /// Product data created in-memory using collection initializer
@@ -60,80 +62,82 @@ namespace JoinOperators
         }
 
         /// <summary>
-        /// Cross Join
+        /// Customer/Order data read into memory from XML file using XLinq
         /// </summary>
-        public static IEnumerable<KeyValuePair<string, string>> GetProductByCrossJoin(string[] categories)
+        public static void CreateCustomersList()
         {
-            return from c in categories
-                   join p in products on c equals p.Category
-                   select new KeyValuePair<string, string>(p.ProductName, p.Category);
+            customers = (from e in XDocument.Load(@"C:\Users\User\source\repos\LINQ\LINQ\HelpClasses\Customers.xml").Root.Elements("customer")
+                         select new Customer
+                         {
+                             CustomerID = (string)e.Element("id"),
+                             CompanyName = (string)e.Element("name"),
+                             Address = (string)e.Element("address"),
+                             City = (string)e.Element("city"),
+                             Region = (string)e.Element("region"),
+                             PostalCode = (string)e.Element("postalcode"),
+                             Country = (string)e.Element("country"),
+                             Phone = (string)e.Element("phone"),
+                             Fax = (string)e.Element("fax"),
+                             Orders = (
+                                 from o in e.Elements("orders").Elements("order")
+                                 select new Order
+                                 {
+                                     OrderID = (int)o.Element("id"),
+                                     OrderDate = (DateTime)o.Element("orderdate"),
+                                     Total = (decimal)o.Element("total")
+                                 })
+                                 .ToArray()
+                         })
+                   .ToList();
         }
 
         /// <summary>
-        /// Group Join
-        /// </summary>        
-        public static IEnumerable<KeyValuePair<string, IEnumerable<Product>>> GetProductByGroupJoin(string[] categories)
+        /// Creates one sequence that contains the names of all customers and products, then ordering.
+        /// </summary>
+        public static IOrderedEnumerable<string> ConcatNames()
         {
-            return from c in categories
-                   join p in products on c equals p.Category into productGroup
-                   select new KeyValuePair<string, IEnumerable<Product>>(c, productGroup);
+            var customerNames = from c in customers
+                                select c.CompanyName;
+            var productNames = from p in products
+                               select p.ProductName;
+
+            return customerNames.Concat(productNames).OrderBy(names => names);
         }
-        
+
         /// <summary>
-        /// Left Join
-        /// </summary> 
-        public static IEnumerable<KeyValuePair<string, IEnumerable<Product>>> GetProductByLeftJoin(string[] categories)
+        /// Determines whether two sequences match on all elements in the same order.
+        /// </summary>
+        public static bool SequenceEqual(List<string> categories)
         {
-            return from c in categories
-                   join p in products on c equals p.Category into productGroup
-                   from p in productGroup.DefaultIfEmpty()
-                   select new KeyValuePair<string, IEnumerable<Product>>(p == null ? "(No products)" : p.ProductName, productGroup);
+            var productCategories = products.GroupBy(p => p.Category).Select(p => p.Key).OrderBy(p => p);
+            return productCategories.SequenceEqual(categories/*.OrderBy(c => c)*/);
         }
 
         private static void Main(string[] args)
         {
+            CreateCustomersList();
             CreateProductList();
-            string[] categories = new string[]
+            List<string> categories = new List<string>
             {
+                "Confections",
+                "Seafood",
+                "Meat/Poultry",
                 "Beverages",
-                "Condiments",
-                "Vegetables",
+                "Grains/Cereals",
                 "Dairy Products",
-                "Seafood"
+                "Condiments",
+                "Produce"
             };
 
-            // Cross join
-            Console.WriteLine("Cross Join");
-            foreach (var item in GetProductByCrossJoin(categories))
+            ///Concat names
+            Console.WriteLine("Customer and product names:");
+            foreach (var n in ConcatNames())
             {
-                Console.WriteLine($"{item.Key} : {item.Value}");
+                Console.WriteLine(n);
             }
 
-            // Group join
-            Console.WriteLine("\nGroup Join");
-            foreach (var item in GetProductByGroupJoin(categories))
-            {
-                Console.WriteLine($"Category : {item.Key}");
-                foreach (var category in item.Value)
-                {
-                    Console.Write(category.ProductName + ", ");
-
-                }
-                Console.WriteLine();
-            }
-            
-            // Left join
-            Console.WriteLine("\nLeft Join");
-            foreach (var item in GetProductByLeftJoin(categories))
-            {
-                Console.WriteLine($"\nCategory : {item.Key}");
-                foreach (var category in item.Value)
-                {
-                    Console.Write($"{category.ProductName}\n");
-                }
-                
-            }
-
+            /// Sequences equality
+            Console.WriteLine("\nThe sequences match: {0}", SequenceEqual(categories));
         }
     }
 }

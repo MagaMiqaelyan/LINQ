@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
+using HelpClasses;
 
 namespace OrderingOperators
 {
@@ -65,7 +66,7 @@ namespace OrderingOperators
         /// </summary>
         public static void CreateCustomersList()
         {
-            customers = (from e in XDocument.Load(@"C:\Users\User\source\repos\LINQ\LINQ\OrderingOperators\Customers.xml").Root.Elements("customer")
+            customers = (from e in XDocument.Load(@"C:\Users\User\source\repos\LINQ\LINQ\HelpClasses\Customers.xml").Root.Elements("customer")
                          select new Customer
                          {
                              CustomerID = (string)e.Element("id"),
